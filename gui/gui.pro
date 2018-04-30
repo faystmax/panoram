@@ -12,6 +12,7 @@ TARGET = gui
 TEMPLATE = app
 QMAKE_CXXFLAGS += /std:c++17
 CONFIG += warn_off
+QMAKE_CXXFLAGS += -openmp
 
 # фиксики для кодировки в консоли
 QMAKE_EXTRA_TARGETS += before_build makefilehook

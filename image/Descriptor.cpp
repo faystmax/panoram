@@ -128,8 +128,9 @@ double DescriptorCreator::getPeak(const vector<double> &baskets, const int notEq
 }
 
 /*  Инвариантость к вращению и масштабу */
-vector <Descriptor> DescriptorCreator::getDescriptorsInvRotationScale(Pyramid &pyramid, vector <Point> points,const int _radius,
-        const int basketCount, const int barCharCount) {
+vector <Descriptor> DescriptorCreator::getDescriptorsInvRotationScale(Pyramid &pyramid, vector <Point> points,  const int _radius,
+                                                                      const int basketCount, const int barCharCount)
+{
     auto sigma = 20;
     auto sigma0 = pyramid.getDog(0).sigmaScale;
     auto sector = 2 * M_PI / basketCount;
@@ -228,7 +229,8 @@ vector <Descriptor> DescriptorCreator::getDescriptorsInvRotationScale(Pyramid &p
 }
 
 vector<Descriptor> DescriptorCreator::getDescriptorsInvRotationScaleAfinn(Pyramid &pyramid, vector<Point> points,
-        const int _radius, const int basketCount, const int barCharCount) {
+                                                                          const int _radius,const int basketCount, const int barCharCount)
+{
     auto sigma = 20;
     auto sigma0 = pyramid.getDog(0).sigmaScale;
     auto sector = 2 * M_PI / basketCount;

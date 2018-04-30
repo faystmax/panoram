@@ -72,7 +72,7 @@ QImage glueImages(const Image &imageLeft, const Image &imageCenter, const Image 
     Image denormImageCenter = imageCenter.getDeNormolize();
     Image denormImageRight = imageRight.getDeNormolize();
 
-    QImage resultImage(denormImageLeft.getWidth() + denormImageCenter.getWidth() + denormImageRight.getWidth(), height, QImage::Format_ARGB32);
+    QImage resultImage(denormImageLeft.getWidth() + denormImageCenter.getWidth() + denormImageRight.getWidth() + 9, height, QImage::Format_ARGB32);
     // imageLeft
     for (auto i = 0; i < denormImageLeft.getWidth(); i++) {
         for (auto j = 0; j < denormImageLeft.getHeight(); j++) {
@@ -85,7 +85,7 @@ QImage glueImages(const Image &imageLeft, const Image &imageCenter, const Image 
     for (auto i = 0; i < denormImageCenter.getWidth(); i++) {
         for (auto j = 0; j < denormImageCenter.getHeight(); j++) {
             double pixel = denormImageCenter.getPixel(i, j);
-            resultImage.setPixel(i+ denormImageLeft.getWidth(), j, qRgb(pixel, pixel, pixel));
+            resultImage.setPixel(i + denormImageLeft.getWidth() + 3, j, qRgb(pixel, pixel, pixel));
         }
     }
 
@@ -93,7 +93,7 @@ QImage glueImages(const Image &imageLeft, const Image &imageCenter, const Image 
     for (auto i = 0; i < denormImageRight.getWidth(); i++) {
         for (auto j = 0; j < denormImageRight.getHeight(); j++) {
             double pixel = denormImageRight.getPixel(i, j);
-            resultImage.setPixel(i + denormImageLeft.getWidth() + denormImageCenter.getWidth(), j, qRgb(pixel, pixel, pixel));
+            resultImage.setPixel(i + denormImageLeft.getWidth() + denormImageCenter.getWidth() + 6 , j, qRgb(pixel, pixel, pixel));
         }
     }
     return resultImage;

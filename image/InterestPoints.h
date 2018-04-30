@@ -33,17 +33,17 @@ struct Point {
 
 class InterestPoints{
 public:
-    vector<Point> harris(const Image &image, const double threshold, const int radius, const int pointsCount);
-    vector<Point> blob(Pyramid &pyramid, const double threshold, const int radius, const int pointsCount);
+    static vector<Point> harris(const Image &image, const double threshold, const int radius, const int pointsCount);
+    static vector<Point> blob(Pyramid &pyramid, const double threshold = 0.05, const int radius = 2, const int pointsCount = 200);
 
     void restorePoints(Pyramid &pyramid, vector<Point> &points);
 private:
-    vector<Point> anmsFilter(vector<Point> points, const int pointsCount);
-    double lambda(const Image &image_dx, const Image &image_dy, const int x, const int y, const int radius);
-    vector <Point> thresholdFilter(const Image &image_S, const double threshold);
-    vector <Point> localMaximum(const vector <Point> points, const Image &image_S);
-    bool isExtremum(Pyramid &pyramid, const int x, const int y, const int z);
-    bool correctPosition(Point &p, Pyramid &pyramid);
+    static vector<Point> anmsFilter(vector<Point> points, const int pointsCount);
+    static double lambda(const Image &image_dx, const Image &image_dy, const int x, const int y, const int radius);
+    static vector <Point> thresholdFilter(const Image &image_S, const double threshold);
+    static vector <Point> localMaximum(const vector <Point> points, const Image &image_S);
+    static bool isExtremum(Pyramid &pyramid, const int x, const int y, const int z);
+    static bool correctPosition(Point &p, Pyramid &pyramid);
 };
 
 #endif // INTERESTPOINTS_H

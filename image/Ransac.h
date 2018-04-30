@@ -51,21 +51,19 @@ private:
 
 class Ransac {
 public:
-    Ransac();
-
     // Поиск матрицы преобразования
-    Matrix<9, 1> search(vector<Vector> &lines, const double threshhold);
+    static Matrix<9, 1> search(vector<Vector> &lines, const double threshhold = 10);
 
     // Получает новые координаты из старых и матрицы преобразования
     static Matrix<3, 1> convert(const Matrix<9, 1>& transMatrix, const int x, const int y);
 
   private:
-    Matrix<9, 1> getHypothesis(Vector &line_1, Vector &line_2, Vector &line_3, Vector &line_4);
-    int countInliers(const Matrix<9, 1> &hyp, const vector<Vector> &lines, const double threshhold);
-    Matrix<9, 1> correctDLT(const vector<int> &indxLines, vector<Vector> &lines);
+    static Matrix<9, 1> getHypothesis(Vector &line_1, Vector &line_2, Vector &line_3, Vector &line_4);
+    static int countInliers(const Matrix<9, 1> &hyp, const vector<Vector> &lines, const double threshhold);
+    static Matrix<9, 1> correctDLT(const vector<int> &indxLines, vector<Vector> &lines);
 
-    vector<double> multiply(int rows, int cols_rows, int cols, const vector<double>& m1, const vector<double>& m2);
-    vector<double> transpose(int rows, int cols, const vector<double>& m1);
+    static vector<double> multiply(int rows, int cols_rows, int cols, const vector<double>& m1, const vector<double>& m2);
+    static vector<double> transpose(int rows, int cols, const vector<double>& m1);
 };
 
 #endif // RANSAC_H

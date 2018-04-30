@@ -3,5 +3,9 @@
         <file>resource/icon/main.png</file>
         <file>resource/icon/vision.png</file>
     </qresource>
-    <qresource prefix="/resource/img"/>
+    <qresource prefix="/resource/img">
+        <file>resource/img/1.jpg</file>
+        <file>resource/img/2.jpg</file>
+        <file>resource/img/3.jpg</file>
+    </qresource>
 </RCC>

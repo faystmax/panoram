@@ -28,20 +28,15 @@ Matrix<Cols, Rows> Matrix<Rows, Cols>::operator~() {
     return result;
 }
 
-Ransac::Ransac() {
-    srand(time(0));
-}
-
 Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
 
-
-    array<int,4> rand_numbers;
+    array<int, 4> rand_numbers;
     std::vector<int> rand_sequence(lines.size()) ;
     std::iota(begin(rand_sequence), end(rand_sequence), 0);   // Fill with 0, 1, ..., lines.size().
 
     int bestInliers = -1;
     int const count = 600;
-    array<pair<array<int,4>,int>,count> linesInliers;
+    array<pair<array<int,4>,int>, count> linesInliers;
     Matrix<9, 1> best;
     for (auto i = 0; i < count; i++) {
         // Генерим рандомные числа

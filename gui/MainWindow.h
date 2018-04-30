@@ -27,16 +27,12 @@ private slots:
     void on_imageSecondButton_clicked();
     void on_imageThirdButton_clicked();
     void on_imageAllButton_clicked();
-
     void on_imagesDefaultButton_clicked();
     void on_action_open_triggered();
     void on_action_save_triggered();
     void on_action_default_triggered();
     void on_action_exit_triggered();
-
     void on_action_about_triggered();
-
-
 
 private:
     Ui::MainWindow *ui;
@@ -44,9 +40,11 @@ private:
 
     void openFiles();
     void saveImage();
+    void loadDefaultImages();
     void showImage(const Image &image);
     void showImage(const QImage &image);
     void showAllImages();
+    void gluePanoram();
 };
 
 #endif // MAINWINDOW_H

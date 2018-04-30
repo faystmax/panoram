@@ -9,6 +9,7 @@
 #include <QImageReader>
 #include <QGraphicsPixmapItem>
 #include <iostream>
+#include <omp.h>
 
 #include "ImageUtil.cpp"
 #include "Kernel.h"
@@ -22,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     ui->statusBar->setStyleSheet("background-color: rgb(217, 217, 217);");
     this->ui->graphicsView->setScene(new QGraphicsScene());
+
+    loadDefaultImages();
 }
 
 MainWindow::~MainWindow() {
@@ -33,7 +36,7 @@ void MainWindow::on_openButton_clicked() {
 }
 
 void MainWindow::on_gluePanoramButton_clicked() {
-
+    gluePanoram();
 }
 
 void MainWindow::on_imageFirstButton_clicked() {
@@ -53,7 +56,7 @@ void MainWindow::on_imageAllButton_clicked() {
 }
 
 void MainWindow::on_imagesDefaultButton_clicked() {
-
+    loadDefaultImages();
 }
 
 void MainWindow::on_action_open_triggered() {
@@ -65,7 +68,7 @@ void MainWindow::on_action_save_triggered() {
 }
 
 void MainWindow::on_action_default_triggered() {
-
+    loadDefaultImages();
 }
 
 void MainWindow::on_action_exit_triggered() {
@@ -110,6 +113,13 @@ void MainWindow::saveImage() {
     }
 }
 
+void MainWindow::loadDefaultImages() {
+    images[0] = constructImage(QImage(":/resource/img/resource/img/1.jpg"));
+    images[1] = constructImage(QImage(":/resource/img/resource/img/2.jpg"));
+    images[2] = constructImage(QImage(":/resource/img/resource/img/3.jpg"));;
+    showAllImages();
+}
+
 void MainWindow::showImage(const Image &image) {
     showImage(getOutputImage(image));
 }
@@ -123,5 +133,26 @@ void MainWindow::showImage(const QImage &image) {
 
 void MainWindow::showAllImages() {
     showImage(glueImages(images[0],images[1],images[2]));
+}
+
+void MainWindow::gluePanoram() {
+
+    vector<vector<Descriptor>> descriptors(3);
+    #pragma omp parallel for
+    for (int i = 0; i < 3; i++) {
+        Pyramid pyramid(images[i]);
+        vector <Point> points = InterestPoints::blob(pyramid);
+        descriptors[i] = DescriptorCreator::getDescriptorsInvRotationScale(pyramid, points);
+    }
+
+    // Glue and draw Panoram
+    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[0], descriptors[1]);
+    vector<Vector>  similar23 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
+    vector<Vector>  similar13 = DescriptorCreator::findSimilar(descriptors[0], descriptors[2]);
+    cout<<similar12.size()<<" "<<similar23.size()<<" "<<similar13.size()<<std::endl;
+
+    auto transformMatrix = Ransac::search(similar23);
+    QImage panoram = glueImagesPanoram(images[1],images[2], transformMatrix);
+    showImage(panoram);
 }
 

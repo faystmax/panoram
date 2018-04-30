@@ -40,13 +40,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         MainWindow.cpp \
-    ImageUtil.cpp
+    ImageUtil.cpp \
+    AboutDialog.cpp
 
 HEADERS += \
-        MainWindow.h
+        MainWindow.h \
+    AboutDialog.h
 
 FORMS += \
-        MainWindow.ui
+        MainWindow.ui \
+    AboutDialog.ui
 
 win32:CONFIG(release, debug|release): LIBS += -L$$OUT_PWD/../image/release/ -limage
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$OUT_PWD/../image/debug/ -limage
@@ -75,3 +78,6 @@ win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../linalg/
 else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../linalg/debug/liblinalg.a
 else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../linalg/release/linalg.lib
 else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$OUT_PWD/../linalg/debug/linalg.lib
+
+RESOURCES += \
+    resources.qrc

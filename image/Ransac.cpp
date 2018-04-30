@@ -5,6 +5,8 @@
 #include <ctime>
 #include <algorithm>
 #include <utility>
+#include <numeric>
+#include <random>
 #include <unordered_set>
 
 template<int Rows, int Cols>
@@ -32,17 +34,23 @@ Ransac::Ransac() {
 
 Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
 
-    array<int,4> numbers;
+
+    array<int,4> rand_numbers;
+    std::vector<int> rand_sequence(lines.size()) ;
+    std::iota(begin(rand_sequence), end(rand_sequence), 0);   // Fill with 0, 1, ..., lines.size().
+
     int bestInliers = -1;
     int const count = 600;
     array<pair<array<int,4>,int>,count> linesInliers;
     Matrix<9, 1> best;
     for (auto i = 0; i < count; i++) {
         // Генерим рандомные числа
-        std::generate_n(numbers.begin(), 4, [&lines]() {return std::rand() % lines.size();});
+//        std::generate_n(rand_numbers.begin(), 4, [&lines]() {return std::rand() % lines.size();});
+        std::sample(rand_sequence.begin(), rand_sequence.end(), rand_numbers.begin(),
+                   4, std::mt19937{std::random_device{}()});
 
         // Получаем гипотезу
-        Matrix<9, 1> hypothesis = getHypothesis(lines[numbers[0]],lines[numbers[1]],lines[numbers[2]],lines[numbers[3]]);
+        Matrix<9, 1> hypothesis = getHypothesis(lines[rand_numbers[0]],lines[rand_numbers[1]],lines[rand_numbers[2]],lines[rand_numbers[3]]);
 
         // Считаем inliers
         int inliers = countInliers(hypothesis, lines, threshhold);
@@ -50,7 +58,7 @@ Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
             bestInliers = inliers;
             best = hypothesis;
         }
-        linesInliers[i] = std::make_pair(numbers, inliers);
+        linesInliers[i] = std::make_pair(rand_numbers, inliers);
     }
     vector<int> indxLines;
     for (auto i = 0; i < count; i++) {

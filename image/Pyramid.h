@@ -31,7 +31,7 @@ struct Item {
 class Pyramid {
 public:
     Pyramid() = default;
-    Pyramid(const Image &image, const int scales = 7, double sigma = 1.6, double sigmaStart = 1);
+    Pyramid(const Image &image, const int scales = 5, double sigma = 1.6, double sigmaStart = 1);
 
     int getItemsSize() const {return items.size();}
     Item getItem(int index) const {return items[index];}

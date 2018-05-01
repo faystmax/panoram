@@ -7,7 +7,7 @@
 #include <math.h>
 #include <numeric>
 #include <algorithm>
-
+#include <iostream>
 
 Descriptor::Descriptor(const int size, Point interPoint) {
     data.resize(size, 0);
@@ -27,7 +27,7 @@ void Descriptor::normalize() {
 
 void Descriptor::clampData(const double min, const double max) {
     for (auto &data : this->data) {
-        data = std::clamp(min, max, data);
+        data = std::clamp(data, min, max);
     }
 }
 
@@ -82,8 +82,8 @@ vector<double> DescriptorCreator::getPointOrientation(const Image &image_dx, con
             auto sideBasketValue = value - mainBasketValue;
 
             // записываем значения
-            firstBasketIndex = clamp(0,basketCount-1,firstBasketIndex);
-            secondBasketIndex = clamp(0,basketCount-1,secondBasketIndex);
+            firstBasketIndex = clamp(firstBasketIndex, 0, basketCount-1);
+            secondBasketIndex = clamp(secondBasketIndex, 0, basketCount-1);
             baskets[firstBasketIndex] += mainBasketValue;
             baskets[secondBasketIndex] += sideBasketValue;
         }
@@ -160,10 +160,6 @@ vector <Descriptor> DescriptorCreator::getDescriptorsInvRotationScale(Pyramid &p
 
         // Ориентация точки
         auto peaks = getPointOrientation(image_dx, image_dy, points[k], sigma, radius);
-
-        // hough
-        descriptors[k].setOrientation(peaks[0]);
-        descriptors[k].setSize(dimension);
 
         for (auto &phiRotate : peaks) {
             for (auto i = 0 ; i < dimension ; i++) {
@@ -260,10 +256,6 @@ vector<Descriptor> DescriptorCreator::getDescriptorsInvRotationScaleAfinn(Pyrami
 
         // Ориентация точки
         auto peaks = getPointOrientation(image_dx, image_dy, points[k], sigma, radius);
-
-        // hough
-        descriptors[k].setOrientation(peaks[0]);
-        descriptors[k].setSize(dimension);
 
         for (auto &phiRotate : peaks) {
             for (auto i = 0 ; i < dimension ; i++) {

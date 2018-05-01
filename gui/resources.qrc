@@ -7,5 +7,17 @@
         <file>resource/img/1.jpg</file>
         <file>resource/img/2.jpg</file>
         <file>resource/img/3.jpg</file>
+        <file>resource/img/11.jpg</file>
+        <file>resource/img/22.jpg</file>
+        <file>resource/img/33.jpg</file>
+        <file>resource/img/111.jpg</file>
+        <file>resource/img/222.jpg</file>
+        <file>resource/img/333.jpg</file>
+        <file>resource/img/1111.jpg</file>
+        <file>resource/img/2222.jpg</file>
+        <file>resource/img/3333.jpg</file>
+        <file>resource/img/11111.jpg</file>
+        <file>resource/img/22222.jpg</file>
+        <file>resource/img/33333.jpg</file>
     </qresource>
 </RCC>

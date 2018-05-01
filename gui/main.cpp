@@ -7,7 +7,6 @@ int main(int argc, char *argv[]) {
 
 #if defined(_OPENMP)
     printf("Compiled by an OpenMP-compliant implementation.\n");
-    printf("The result of omp_get_num_threads %i\n", omp_get_num_threads());
 #endif
 
     QApplication a(argc, argv);

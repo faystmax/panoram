@@ -245,6 +245,9 @@
      <pointsize>9</pointsize>
     </font>
    </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
   </widget>
   <action name="action_open">
    <property name="text">

@@ -26,27 +26,9 @@ public:
     void setPointXY(const int x, const int y);
     vector<double>& getData()  {return data;}
 
-    double getSize() const {return size;}
-    void setSize(double value) {size = value;}
-
-    double getOrientation() const {return orientation;}
-    void setOrientation(double value) {orientation = value;}
-
-    double getCenterAngle() const {return centerAngle;}
-    void setCenterAngle(double value) {centerAngle = value;}
-
-    double getCenterDistance() const {return centerDistance;}
-    void setCenterDistance(double value) {centerDistance = value;}
-
 private:
    Point interPoint;    // Интересная точка - центр
    vector<double> data; // N - Количество корзин * L кол-во гистограмм
-
-   // Hough
-   double centerDistance;   // Расстояние до центра
-   double centerAngle;      // Угол относительно центра
-   double orientation;      // Ориентация
-   double size;             // Размер дескриптора
 
    friend DescriptorCreator;
 };

@@ -114,9 +114,9 @@ void MainWindow::saveImage() {
 }
 
 void MainWindow::loadDefaultImages() {
-    images[0] = constructImage(QImage(":/resource/img/resource/img/1.jpg"));
-    images[1] = constructImage(QImage(":/resource/img/resource/img/2.jpg"));
-    images[2] = constructImage(QImage(":/resource/img/resource/img/3.jpg"));;
+    images[0] = constructImage(QImage(":/resource/img/resource/img/111.jpg"));
+    images[1] = constructImage(QImage(":/resource/img/resource/img/222.jpg"));
+    images[2] = constructImage(QImage(":/resource/img/resource/img/333.jpg"));;
     showAllImages();
 }
 
@@ -137,7 +137,8 @@ void MainWindow::showAllImages() {
 
 void MainWindow::gluePanoram() {
 
-    vector<vector<Descriptor>> descriptors(3);
+    vector<Descriptor> descriptors[3];
+    this->ui->statusBar->showMessage("Ищем дескрипторы изображений...");
     #pragma omp parallel for
     for (int i = 0; i < 3; i++) {
         Pyramid pyramid(images[i]);
@@ -145,14 +146,59 @@ void MainWindow::gluePanoram() {
         descriptors[i] = DescriptorCreator::getDescriptorsInvRotationScale(pyramid, points);
     }
 
-    // Glue and draw Panoram
-    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[0], descriptors[1]);
-    vector<Vector>  similar23 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
-    vector<Vector>  similar13 = DescriptorCreator::findSimilar(descriptors[0], descriptors[2]);
-    cout<<similar12.size()<<" "<<similar23.size()<<" "<<similar13.size()<<std::endl;
+    // Ищем правильный порядок
+    int left = 0;
+    int center = 1;
+    int right = 2;
+    double shift_Left, shift_Right;
+    Matrix<9, 1> transformMatrix_1, transformMatrix_2;
+    vector<Vector>  similarCL , similarCR;
+    this->ui->statusBar->showMessage("Ищем правильный порядок в панораме....");
+    do {
+        similarCL = DescriptorCreator::findSimilar(descriptors[center], descriptors[left]);
+        similarCR = DescriptorCreator::findSimilar(descriptors[center], descriptors[right]);
 
-    auto transformMatrix = Ransac::search(similar23);
-    QImage panoram = glueImagesPanoram(images[1],images[2], transformMatrix);
+        transformMatrix_1 = Ransac::search(similarCL);
+        transformMatrix_2 = Ransac::search(similarCR);
+        shift_Left = transformMatrix_1.at(2,0);
+        shift_Right = transformMatrix_2.at(2,0);
+
+//        cout<<shift_Left<<"   "<<shift_Right<<std::endl;
+//        cout<<left<<" "<<center<<" "<<right<<std::endl;
+
+        if(shift_Left > 0  && shift_Right <0){
+            swap(left, right);
+        } else if(shift_Left > 0 ){
+            swap(left, center);
+        } else if(shift_Right < 0){
+            swap(right, center);
+        }
+//        cout<<left<<" "<<center<<" "<<right<<std::endl;
+    } while (shift_Left>=0 || shift_Right <= 0);
+
+    this->ui->statusBar->showMessage("Правильный порядок: " +  QString::number(left) + " " + QString::number(center) + " " + QString::number(right));
+    QImage panoram = glueImagesPanoram(images[left],images[center],images[right], transformMatrix_1, transformMatrix_2);
     showImage(panoram);
+
+//    Для отладки...
+//    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[1], descriptors[0]);
+//    vector<Vector>  similar23 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
+//    auto transformMatrix_1 = Ransac::search(similar12);
+//    auto transformMatrix_2 = Ransac::search(similar23);
+//    QImage panoram = glueImagesPanoram(images[0],images[1],images[2], transformMatrix_1, transformMatrix_2);
+//    showImage(panoram);
+
+//    auto transformMatrix = Ransac::search(similar12);
+//    QImage panoram = glueImagesPanoram(images[1],images[0], transformMatrix);
+//    showImage(panoram);
+
+//    auto transformMatrix = Ransac::search(similar23);
+//    QImage panoram = glueImagesPanoram(images[1],images[2], transformMatrix);
+//    showImage(panoram);
+
+//    Для отладки.. отрисовка связей дескриипторов
+//   QImage result = glueImages(images[1],images[2]);
+//   drawLinesAndCircles(result, images[1].getWidth(), similar23);
+//   showImage(result);
 }
 

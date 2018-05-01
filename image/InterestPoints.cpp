@@ -21,7 +21,6 @@ vector<Point> InterestPoints::harris(const Image &image, const double threshold,
 }
 
 vector<Point> InterestPoints::blob(Pyramid &pyramid, const double threshold, const int radius, const int pointsCount) {
-
     vector<Point> points;
     Kernel kernel_x = KernelCreator::getSobelX();
     Kernel kernel_y = KernelCreator::getSobelY();

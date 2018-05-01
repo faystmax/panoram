@@ -1,16 +1,12 @@
 #include "Ransac.h"
 
 #include <QtGlobal>
-#include <cstdlib>
-#include <ctime>
 #include <algorithm>
-#include <utility>
 #include <numeric>
 #include <random>
-#include <unordered_set>
 
 template<int Rows, int Cols>
-Matrix<Rows, Cols>::Matrix(const int x, const int y){
+Matrix<Rows, Cols>::Matrix(const int x, const int y) {
     this->data[0] = x;
     this->data[1] = y;
     this->data[2] = 1;
@@ -35,14 +31,13 @@ Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
     std::iota(begin(rand_sequence), end(rand_sequence), 0);   // Fill with 0, 1, ..., lines.size().
 
     int bestInliers = -1;
-    int const count = 600;
-    array<pair<array<int,4>,int>, count> linesInliers;
+    int const count = 100000;
+    vector<pair<array<int,4>,int>> linesInliers(count);
     Matrix<9, 1> best;
     for (auto i = 0; i < count; i++) {
         // Генерим рандомные числа
-//        std::generate_n(rand_numbers.begin(), 4, [&lines]() {return std::rand() % lines.size();});
         std::sample(rand_sequence.begin(), rand_sequence.end(), rand_numbers.begin(),
-                   4, std::mt19937{std::random_device{}()});
+                    4, std::mt19937{std::random_device{}()});
 
         // Получаем гипотезу
         Matrix<9, 1> hypothesis = getHypothesis(lines[rand_numbers[0]],lines[rand_numbers[1]],lines[rand_numbers[2]],lines[rand_numbers[3]]);
@@ -57,7 +52,7 @@ Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
     }
     vector<int> indxLines;
     for (auto i = 0; i < count; i++) {
-        if(linesInliers[i].second == bestInliers){
+        if (linesInliers[i].second == bestInliers) {
             indxLines.push_back(linesInliers[i].first[0]);
             indxLines.push_back(linesInliers[i].first[1]);
             indxLines.push_back(linesInliers[i].first[2]);
@@ -70,16 +65,16 @@ Matrix<9, 1> Ransac::search(vector<Vector> &lines, const double threshhold) {
     indxLines.erase(last, indxLines.end());
 
     return correctDLT(indxLines, lines);
+//    return best;
 }
 
-Matrix<9, 1> Ransac::correctDLT(const vector<int> &indxLines, vector<Vector> &lines)
-{
+Matrix<9, 1> Ransac::correctDLT(const vector<int> &indxLines, vector<Vector> &lines) {
     // Инициализируем матрицу A
-    int size = indxLines.size() > 24 ? 24 : indxLines.size();
+    int size = indxLines.size();
     int rows = size * 2;
     int cols = 9;
     vector<double> matr_A(rows * cols, 0);
-    for(int i = 0;i < size; i++){
+    for (int i = 0; i < size; i++) {
 
         double x1 = lines[indxLines[i]].second.getInterPointRef().x;
         double y1 = lines[indxLines[i]].second.getInterPointRef().y;
@@ -87,18 +82,26 @@ Matrix<9, 1> Ransac::correctDLT(const vector<int> &indxLines, vector<Vector> &li
         double y1_s = lines[indxLines[i]].first.getInterPointRef().y;
 
         int idx = i * 2 * 9;
-        matr_A[idx + 0] = x1;         matr_A[idx + 1] = y1;          matr_A[idx + 2] = 1;
-        matr_A[idx + 6] = -x1_s * x1; matr_A[idx + 7] = -x1_s * y1;  matr_A[idx + 8]  = -x1_s;
+        matr_A[idx + 0] = x1;
+        matr_A[idx + 1] = y1;
+        matr_A[idx + 2] = 1;
+        matr_A[idx + 6] = -x1_s * x1;
+        matr_A[idx + 7] = -x1_s * y1;
+        matr_A[idx + 8]  = -x1_s;
 
         idx  +=  9;
-        matr_A[idx + 3] = x1;         matr_A[idx + 4] = y1;          matr_A[idx + 5] = 1;
-        matr_A[idx + 6] = -y1_s * x1; matr_A[idx + 7] = -y1_s * y1;  matr_A[idx + 8]  = -y1_s;
+        matr_A[idx + 3] = x1;
+        matr_A[idx + 4] = y1;
+        matr_A[idx + 5] = 1;
+        matr_A[idx + 6] = -y1_s * x1;
+        matr_A[idx + 7] = -y1_s * y1;
+        matr_A[idx + 8]  = -y1_s;
     }
 
 
     // Транспонируем и перемножаем
-    vector<double> transp_A = transpose(rows , cols, matr_A);
-    vector<double> res = multiply(cols, rows , cols,transp_A, matr_A);
+    vector<double> transp_A = transpose(rows, cols, matr_A);
+    vector<double> res = multiply(cols, rows, cols,transp_A, matr_A);
 
     // Кладём в real_2d_array
     real_2d_array matr, u, vt;
@@ -116,25 +119,26 @@ Matrix<9, 1> Ransac::correctDLT(const vector<int> &indxLines, vector<Vector> &li
     for (auto i = 0; i < hypothesis.getRows(); i++) {
         hypothesis.set(i, 0, koef * u[i][u.cols()-1]);
     }
+
     return hypothesis;
 }
 
 /* Перемножение для векторов */
-vector<double> Ransac::multiply(int rows, int cols_rows, int cols,const vector<double>& m1,const vector<double>& m2){
+vector<double> Ransac::multiply(int rows, int cols_rows, int cols,const vector<double> &m1,const vector<double> &m2) {
     vector<double> result(rows * cols);
     for (auto i = 0; i < rows; i++) {
         for (auto j = 0; j < cols; j++) {
-           double sum = 0;
-           for (auto k = 0; k < cols_rows; k++) {
-               sum += m1[i * cols_rows + k] * m2[k * cols + j];
-           }
+            double sum = 0;
+            for (auto k = 0; k < cols_rows; k++) {
+                sum += m1[i * cols_rows + k] * m2[k * cols + j];
+            }
             result[i * cols + j] = sum;
         }
     }
     return result;
 }
 
-vector<double> Ransac::transpose(int rows, int cols, const vector<double> &m1){
+vector<double> Ransac::transpose(int rows, int cols, const vector<double> &m1) {
     vector<double> result(m1.size());
     for (auto i = 0; i < rows; i++) {
         for (auto j = 0; j < cols; j++) {

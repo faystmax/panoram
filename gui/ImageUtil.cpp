@@ -99,7 +99,7 @@ QImage glueImages(const Image &imageLeft, const Image &imageCenter, const Image 
     return resultImage;
 }
 
-// Строим панораму
+// Строим панораму из 2 изображений
 QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const Matrix<9, 1>& matr) {
 
     QImage outputLeftImage = getOutputImage(imageLeft.getDeNormolize());
@@ -109,6 +109,7 @@ QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const 
     QTransform transform(matr.at(0,0),matr.at(3,0),matr.at(6,0),
                          matr.at(1,0),matr.at(4,0),matr.at(7,0),
                          matr.at(2,0),matr.at(5,0),matr.at(8,0));
+
 
     // Создаём Новое изображение
     auto height = max(outputLeftImage.height(), outputRightImage.height() + 100); // высоту возьмём с запасом
@@ -123,6 +124,51 @@ QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const 
 
     return resultImage;
 }
+
+// Строим панораму из 3 изображений
+QImage glueImagesPanoram(const Image &imageLeft,const Image &imageCenter, const Image &imageRight,
+                         const Matrix<9, 1>& matr_1, const Matrix<9, 1>& matr_2) {
+
+    QImage outputLeftImage = getOutputImage(imageLeft.getDeNormolize());
+    QImage outputCenterImage = getOutputImage(imageCenter.getDeNormolize());
+    QImage outputRightImage = getOutputImage(imageRight.getDeNormolize());
+
+    // transform matrix
+    QTransform transform_1(matr_1.at(0,0),matr_1.at(3,0),matr_1.at(6,0),
+                         matr_1.at(1,0),matr_1.at(4,0),matr_1.at(7,0),
+                         matr_1.at(2,0),matr_1.at(5,0),matr_1.at(8,0));
+
+
+    QTransform transform_2(matr_2.at(0,0),matr_2.at(3,0),matr_2.at(6,0),
+                         matr_2.at(1,0),matr_2.at(4,0),matr_2.at(7,0),
+                         matr_2.at(2,0),matr_2.at(5,0),matr_2.at(8,0));
+
+
+    // Создаём Новое изображение
+    auto height = max(outputLeftImage.height(), outputRightImage.height());
+    height = max(height, outputCenterImage.height() + 200);
+    QImage resultImage(outputLeftImage.width() + outputCenterImage.width() + outputRightImage.width(), height, QImage::Format_ARGB32);
+    resultImage.fill(QColor::fromRgb(255,255,255));
+
+    // Склеиваем панораму
+    QPainter painter;
+    painter.begin(&resultImage);
+    painter.translate(100,0);
+    painter.drawImage(0, 0, outputCenterImage);
+    painter.setTransform(transform_1,true);
+    painter.drawImage(0, 0, outputLeftImage);
+    painter.end();
+
+    // Используем 2 painterтак как 2 setTransform ведут себя некоректно
+    QPainter painter2;
+    painter2.begin(&resultImage);
+    painter2.translate(100,0);
+    painter2.setTransform(transform_2, true);
+    painter2.drawImage(0, 0, outputRightImage);
+    painter2.end();
+    return resultImage;
+}
+
 
 inline vector<QColor> randomColors(int count) {
     vector<QColor> colors;

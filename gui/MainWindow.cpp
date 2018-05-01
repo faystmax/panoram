@@ -114,9 +114,9 @@ void MainWindow::saveImage() {
 }
 
 void MainWindow::loadDefaultImages() {
-    images[0] = constructImage(QImage(":/resource/img/resource/img/111.jpg"));
-    images[1] = constructImage(QImage(":/resource/img/resource/img/222.jpg"));
-    images[2] = constructImage(QImage(":/resource/img/resource/img/333.jpg"));;
+    images[2] = constructImage(QImage(":/resource/img/resource/img/11111.jpg"));
+    images[1] = constructImage(QImage(":/resource/img/resource/img/22222.jpg"));
+    images[0] = constructImage(QImage(":/resource/img/resource/img/33333.jpg"));;
     showAllImages();
 }
 
@@ -146,34 +146,45 @@ void MainWindow::gluePanoram() {
         descriptors[i] = DescriptorCreator::getDescriptorsInvRotationScale(pyramid, points);
     }
 
-    // Ищем правильный порядок
-    int left = 0;
-    int center = 1;
-    int right = 2;
+    this->ui->statusBar->showMessage("Ищем правильный порядок в панораме...");
+
+    // Сравниваем каждое с каждым
+    int similarCount[3];
+    vector<Vector>  similar11 = DescriptorCreator::findSimilar(descriptors[0], descriptors[1]);
+    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[0], descriptors[2]);
+    similarCount[0] = similar11.size() + similar12.size();
+
+    vector<Vector>  similar21 = DescriptorCreator::findSimilar(descriptors[1], descriptors[0]);
+    vector<Vector>  similar22 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
+    similarCount[1] = similar21.size() + similar22.size();
+
+    vector<Vector>  similar31 = DescriptorCreator::findSimilar(descriptors[2], descriptors[0]);
+    vector<Vector>  similar32 = DescriptorCreator::findSimilar(descriptors[2], descriptors[1]);
+    similarCount[2] = similar31.size() + similar32.size();
+
+    // Индекс максимального изображения
+    int maxIndex = distance(similarCount, max_element(similarCount, similarCount + 3));
+
+    int left = (maxIndex + 1) % 3;
+    int center = maxIndex;
+    int right = (maxIndex + 2) % 3;
+
     double shift_Left, shift_Right;
     Matrix<9, 1> transformMatrix_1, transformMatrix_2;
     vector<Vector>  similarCL , similarCR;
-    this->ui->statusBar->showMessage("Ищем правильный порядок в панораме....");
     do {
         similarCL = DescriptorCreator::findSimilar(descriptors[center], descriptors[left]);
         similarCR = DescriptorCreator::findSimilar(descriptors[center], descriptors[right]);
 
         transformMatrix_1 = Ransac::search(similarCL);
         transformMatrix_2 = Ransac::search(similarCR);
+
         shift_Left = transformMatrix_1.at(2,0);
         shift_Right = transformMatrix_2.at(2,0);
 
-//        cout<<shift_Left<<"   "<<shift_Right<<std::endl;
-//        cout<<left<<" "<<center<<" "<<right<<std::endl;
-
         if(shift_Left > 0  && shift_Right <0){
             swap(left, right);
-        } else if(shift_Left > 0 ){
-            swap(left, center);
-        } else if(shift_Right < 0){
-            swap(right, center);
         }
-//        cout<<left<<" "<<center<<" "<<right<<std::endl;
     } while (shift_Left>=0 || shift_Right <= 0);
 
     this->ui->statusBar->showMessage("Правильный порядок: " +  QString::number(left) + " " + QString::number(center) + " " + QString::number(right));

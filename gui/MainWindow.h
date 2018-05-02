@@ -36,7 +36,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    Image images[3];
+    array<Image,3> images;
 
     void openFiles();
     void saveImage();
@@ -44,7 +44,6 @@ private:
     void showImage(const Image &image);
     void showImage(const QImage &image);
     void showAllImages();
-    void gluePanoram();
 };
 
 #endif // MAINWINDOW_H

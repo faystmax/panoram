@@ -8,8 +8,6 @@
 #include <QFileDialog>
 #include <QImageReader>
 #include <QGraphicsPixmapItem>
-#include <iostream>
-#include <omp.h>
 
 #include "ImageUtil.cpp"
 #include "Kernel.h"
@@ -36,7 +34,9 @@ void MainWindow::on_openButton_clicked() {
 }
 
 void MainWindow::on_gluePanoramButton_clicked() {
-    gluePanoram();
+    this->ui->statusBar->showMessage("Склеиваем панораму...");
+    showImage(gluePanoram(images));
+    this->ui->statusBar->showMessage("Панорама готова!");
 }
 
 void MainWindow::on_imageFirstButton_clicked() {
@@ -124,7 +124,6 @@ void MainWindow::showImage(const Image &image) {
     showImage(getOutputImage(image));
 }
 
-
 void MainWindow::showImage(const QImage &image) {
     this->ui->graphicsView->scene()->clear();
     this->ui->graphicsView->scene()->setSceneRect(0, 0, image.width(), image.height());
@@ -133,83 +132,5 @@ void MainWindow::showImage(const QImage &image) {
 
 void MainWindow::showAllImages() {
     showImage(glueImages(images[0],images[1],images[2]));
-}
-
-void MainWindow::gluePanoram() {
-
-    vector<Descriptor> descriptors[3];
-    this->ui->statusBar->showMessage("Ищем дескрипторы изображений...");
-    #pragma omp parallel for
-    for (int i = 0; i < 3; i++) {
-        Pyramid pyramid(images[i]);
-        vector <Point> points = InterestPoints::blob(pyramid);
-        descriptors[i] = DescriptorCreator::getDescriptorsInvRotationScale(pyramid, points);
-    }
-
-    this->ui->statusBar->showMessage("Ищем правильный порядок в панораме...");
-
-    // Сравниваем каждое с каждым
-    int similarCount[3];
-    vector<Vector>  similar11 = DescriptorCreator::findSimilar(descriptors[0], descriptors[1]);
-    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[0], descriptors[2]);
-    similarCount[0] = similar11.size() + similar12.size();
-
-    vector<Vector>  similar21 = DescriptorCreator::findSimilar(descriptors[1], descriptors[0]);
-    vector<Vector>  similar22 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
-    similarCount[1] = similar21.size() + similar22.size();
-
-    vector<Vector>  similar31 = DescriptorCreator::findSimilar(descriptors[2], descriptors[0]);
-    vector<Vector>  similar32 = DescriptorCreator::findSimilar(descriptors[2], descriptors[1]);
-    similarCount[2] = similar31.size() + similar32.size();
-
-    // Индекс максимального изображения
-    int maxIndex = distance(similarCount, max_element(similarCount, similarCount + 3));
-
-    int left = (maxIndex + 1) % 3;
-    int center = maxIndex;
-    int right = (maxIndex + 2) % 3;
-
-    double shift_Left, shift_Right;
-    Matrix<9, 1> transformMatrix_1, transformMatrix_2;
-    vector<Vector>  similarCL , similarCR;
-    do {
-        similarCL = DescriptorCreator::findSimilar(descriptors[center], descriptors[left]);
-        similarCR = DescriptorCreator::findSimilar(descriptors[center], descriptors[right]);
-
-        transformMatrix_1 = Ransac::search(similarCL);
-        transformMatrix_2 = Ransac::search(similarCR);
-
-        shift_Left = transformMatrix_1.at(2,0);
-        shift_Right = transformMatrix_2.at(2,0);
-
-        if(shift_Left > 0  && shift_Right <0){
-            swap(left, right);
-        }
-    } while (shift_Left>=0 || shift_Right <= 0);
-
-    this->ui->statusBar->showMessage("Правильный порядок: " +  QString::number(left) + " " + QString::number(center) + " " + QString::number(right));
-    QImage panoram = glueImagesPanoram(images[left],images[center],images[right], transformMatrix_1, transformMatrix_2);
-    showImage(panoram);
-
-//    Для отладки...
-//    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[1], descriptors[0]);
-//    vector<Vector>  similar23 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
-//    auto transformMatrix_1 = Ransac::search(similar12);
-//    auto transformMatrix_2 = Ransac::search(similar23);
-//    QImage panoram = glueImagesPanoram(images[0],images[1],images[2], transformMatrix_1, transformMatrix_2);
-//    showImage(panoram);
-
-//    auto transformMatrix = Ransac::search(similar12);
-//    QImage panoram = glueImagesPanoram(images[1],images[0], transformMatrix);
-//    showImage(panoram);
-
-//    auto transformMatrix = Ransac::search(similar23);
-//    QImage panoram = glueImagesPanoram(images[1],images[2], transformMatrix);
-//    showImage(panoram);
-
-//    Для отладки.. отрисовка связей дескриипторов
-//   QImage result = glueImages(images[1],images[2]);
-//   drawLinesAndCircles(result, images[1].getWidth(), similar23);
-//   showImage(result);
 }
 

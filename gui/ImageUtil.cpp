@@ -3,6 +3,7 @@
 #include "InterestPoints.h"
 #include "Descriptor.h"
 #include "Ransac.h"
+#include <omp.h>
 
 #include <QImage>
 #include <QPixmap>
@@ -93,14 +94,14 @@ QImage glueImages(const Image &imageLeft, const Image &imageCenter, const Image 
     for (auto i = 0; i < denormImageRight.getWidth(); i++) {
         for (auto j = 0; j < denormImageRight.getHeight(); j++) {
             double pixel = denormImageRight.getPixel(i, j);
-            resultImage.setPixel(i + denormImageLeft.getWidth() + denormImageCenter.getWidth() + 6 , j, qRgb(pixel, pixel, pixel));
+            resultImage.setPixel(i + denormImageLeft.getWidth() + denormImageCenter.getWidth() + 6, j, qRgb(pixel, pixel, pixel));
         }
     }
     return resultImage;
 }
 
 // Строим панораму из 2 изображений
-QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const Matrix<9, 1>& matr) {
+QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const Matrix<9, 1> &matr) {
 
     QImage outputLeftImage = getOutputImage(imageLeft.getDeNormolize());
     QImage outputRightImage = getOutputImage(imageRight.getDeNormolize());
@@ -127,7 +128,7 @@ QImage glueImagesPanoram(const Image &imageLeft, const Image &imageRight, const 
 
 // Строим панораму из 3 изображений
 QImage glueImagesPanoram(const Image &imageLeft,const Image &imageCenter, const Image &imageRight,
-                         const Matrix<9, 1>& matr_1, const Matrix<9, 1>& matr_2) {
+                         const Matrix<9, 1> &matr_1, const Matrix<9, 1> &matr_2) {
 
     QImage outputLeftImage = getOutputImage(imageLeft.getDeNormolize());
     QImage outputCenterImage = getOutputImage(imageCenter.getDeNormolize());
@@ -135,13 +136,13 @@ QImage glueImagesPanoram(const Image &imageLeft,const Image &imageCenter, const 
 
     // transform matrix
     QTransform transform_1(matr_1.at(0,0),matr_1.at(3,0),matr_1.at(6,0),
-                         matr_1.at(1,0),matr_1.at(4,0),matr_1.at(7,0),
-                         matr_1.at(2,0),matr_1.at(5,0),matr_1.at(8,0));
+                           matr_1.at(1,0),matr_1.at(4,0),matr_1.at(7,0),
+                           matr_1.at(2,0),matr_1.at(5,0),matr_1.at(8,0));
 
 
     QTransform transform_2(matr_2.at(0,0),matr_2.at(3,0),matr_2.at(6,0),
-                         matr_2.at(1,0),matr_2.at(4,0),matr_2.at(7,0),
-                         matr_2.at(2,0),matr_2.at(5,0),matr_2.at(8,0));
+                           matr_2.at(1,0),matr_2.at(4,0),matr_2.at(7,0),
+                           matr_2.at(2,0),matr_2.at(5,0),matr_2.at(8,0));
 
 
     // Создаём Новое изображение
@@ -235,4 +236,58 @@ QImage createImageWithPointsBlob(const Image &image, const vector <Point> &point
     }
     painter.end();
     return resultImage;
+}
+
+QImage gluePanoram(array<Image,3> images) {
+
+    vector<Descriptor> descriptors[3];
+    #pragma omp parallel for
+    for (int i = 0; i < 3; i++) {
+        Pyramid pyramid(images[i]);
+        vector <Point> points = InterestPoints::blob(pyramid);
+        descriptors[i] = DescriptorCreator::getDescriptorsInvRotationScale(pyramid, points);
+    }
+
+    // Сравниваем каждое с каждым
+    int similarCount[3];
+    vector<Vector>  similar11 = DescriptorCreator::findSimilar(descriptors[0], descriptors[1]);
+    vector<Vector>  similar12 = DescriptorCreator::findSimilar(descriptors[0], descriptors[2]);
+    similarCount[0] = similar11.size() + similar12.size();
+
+    vector<Vector>  similar21 = DescriptorCreator::findSimilar(descriptors[1], descriptors[0]);
+    vector<Vector>  similar22 = DescriptorCreator::findSimilar(descriptors[1], descriptors[2]);
+    similarCount[1] = similar21.size() + similar22.size();
+
+    vector<Vector>  similar31 = DescriptorCreator::findSimilar(descriptors[2], descriptors[0]);
+    vector<Vector>  similar32 = DescriptorCreator::findSimilar(descriptors[2], descriptors[1]);
+    similarCount[2] = similar31.size() + similar32.size();
+
+    // Индекс максимального изображения
+    int maxIndex = distance(similarCount, max_element(similarCount, similarCount + 3));
+
+    int left = (maxIndex + 1) % 3;
+    int center = maxIndex;
+    int right = (maxIndex + 2) % 3;
+
+    double shift_Left, shift_Right;
+    Matrix<9, 1> transformMatrix_1, transformMatrix_2;
+    vector<Vector>  similarCL, similarCR;
+
+    // Корректировка левого и правого изображения
+    do {
+        similarCL = DescriptorCreator::findSimilar(descriptors[center], descriptors[left]);
+        similarCR = DescriptorCreator::findSimilar(descriptors[center], descriptors[right]);
+
+        transformMatrix_1 = Ransac::search(similarCL);
+        transformMatrix_2 = Ransac::search(similarCR);
+
+        shift_Left = transformMatrix_1.at(2,0);
+        shift_Right = transformMatrix_2.at(2,0);
+
+        if (shift_Left > 0  && shift_Right <0) {
+            swap(left, right);
+        }
+    } while (shift_Left>=0 || shift_Right <= 0);
+
+    return glueImagesPanoram(images[left],images[center],images[right], transformMatrix_1, transformMatrix_2);
 }
